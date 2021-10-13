@@ -6,7 +6,11 @@ import java.net.Socket;
 
 public class Server {
 
+  // über dieses serversocket werden die eingehenden verbindungen akzeptiert
   private ServerSocket serverSocket;
+
+  // der einzige verbundene client kommuniziert über diesen socket mit diesem writer / reader mit
+  // dem server -> für mehrere clients muss dies angepasst werden
   private Socket socket;
   private ObjectOutputStream writer;
   private ObjectInputStream reader;
@@ -22,8 +26,9 @@ public class Server {
     }
   }
 
-
   private void awaitConnection() {
+    // hier wird im moment genau eine eingehende verbindung akzeptiert; ist der 1. Client verbunden,
+    // dann wird dieser Thread beendet. für mehrere clients muss dies angepasst werden.
     try {
       socket = serverSocket.accept();
       writer = new ObjectOutputStream(socket.getOutputStream());
@@ -37,6 +42,8 @@ public class Server {
   }
 
   private void handleMessages() {
+    // dieser thread wartet auf ankommende nachrichten des verbundenen clients. bei mehreren clients
+    // gibt es für jeden client genau einen thread, der auf nachrichten wartet.
     while (socket.isConnected()) {
       try {
         Message message = (Message) reader.readObject();

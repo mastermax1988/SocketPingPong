@@ -1,8 +1,8 @@
 public class Main {
 
   public static void main(String[] args) {
-    Server server = new Server();
-    Client client = new Client();
+    new Server(); //server startet
+    Client client = new Client(); //client verbindet sich zum server
 
     client.send("Nachricht 1");
     client.send("Das ist ein längerer Text :)");
