@@ -46,6 +46,13 @@ public class Server {
     }
   }
 
+  public void shutdown(){
+    try {
+      serverSocket.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
   private void handleMessages(ServerConnection connection) {
     // dieser thread wartet auf ankommende nachrichten des verbundenen clients. bei mehreren clients
     // gibt es für jeden client genau einen thread, der auf nachrichten wartet.

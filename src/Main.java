@@ -1,20 +1,24 @@
 public class Main {
 
-  public static void main(String[] args) {
-    new Server(); //server startet
-    Client client1 = new Client(); //client verbindet sich zum server
-    Client client2 = new Client();
+  public static void main(String[] args) throws InterruptedException {
+    Server server = new Server(); // server startet
+    Client client1 = new Client("c1"); // client verbindet sich zum server
 
-    client1.send("c1 Nachricht 1");
-    client2.send("c2 asdf");
-    client1.send("c1 Das ist ein längerer Text :)");
+    client1.send("Nachricht 1");
+    Thread.sleep(1000);
 
+    Client client2 = new Client("c2"); // c2 verbindet sich
+    Thread.sleep(1000);
+    client2.send("Das ist ein längerer Text :)");
 
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+    Thread.sleep(1000);
+    client2.disconnect();
+
+    Thread.sleep(1000);
+    client1.send("Wo bist du c2?");
+
+    Thread.sleep(1000);
     client1.disconnect();
+    server.shutdown();
   }
 }
