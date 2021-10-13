@@ -2,7 +2,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
-import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Server {
 
@@ -11,11 +12,10 @@ public class Server {
 
   // der einzige verbundene client kommuniziert über diesen socket mit diesem writer / reader mit
   // dem server -> für mehrere clients muss dies angepasst werden
-  private Socket socket;
-  private ObjectOutputStream writer;
-  private ObjectInputStream reader;
+  List<ServerConnection> connectedClients;
 
   public Server() {
+    connectedClients = new ArrayList<>();
     try {
       serverSocket = new ServerSocket(8080);
       Thread t = new Thread(this::awaitConnection);
@@ -29,29 +29,44 @@ public class Server {
   private void awaitConnection() {
     // hier wird im moment genau eine eingehende verbindung akzeptiert; ist der 1. Client verbunden,
     // dann wird dieser Thread beendet. für mehrere clients muss dies angepasst werden.
-    try {
-      socket = serverSocket.accept();
-      writer = new ObjectOutputStream(socket.getOutputStream());
-      reader = new ObjectInputStream(socket.getInputStream());
-      System.out.println("[SERVER]: Client connected");
-      Thread t = new Thread(this::handleMessages);
-      t.start();
-    } catch (IOException e) {
-      e.printStackTrace();
+    while (true) {
+      try {
+        ServerConnection connection = new ServerConnection();
+        connection.socket = serverSocket.accept();
+        connection.writer = new ObjectOutputStream(connection.socket.getOutputStream());
+        connection.reader = new ObjectInputStream(connection.socket.getInputStream());
+        connectedClients.add(connection);
+        System.out.println("[SERVER]: Client connected");
+        Thread t = new Thread(() -> handleMessages(connection));
+        t.start();
+      } catch (IOException e) {
+        System.out.println("Server no longer accepting clients");
+        break;
+      }
     }
   }
 
-  private void handleMessages() {
+  private void handleMessages(ServerConnection connection) {
     // dieser thread wartet auf ankommende nachrichten des verbundenen clients. bei mehreren clients
     // gibt es für jeden client genau einen thread, der auf nachrichten wartet.
-    while (socket.isConnected()) {
+    while (connection.socket.isConnected()) {
       try {
-        Message message = (Message) reader.readObject();
+        Message message = (Message) connection.reader.readObject();
         System.out.println("[SERVER] message received: " + message.content);
-        writer.writeObject(new Message("Pong - " + message.content));
+        sendToAllClients("Pong - " + message.content);
       } catch (IOException | ClassNotFoundException e) {
         System.out.println("[SERVER] connection lost");
         break;
+      }
+    }
+  }
+
+  private void sendToAllClients(String s){
+    for (ServerConnection c : connectedClients){
+      try {
+        c.writer.writeObject(new Message(s));
+      } catch (IOException e) {
+        e.printStackTrace();
       }
     }
   }
